@@ -41,7 +41,7 @@ class DLLFilter:
         dll_files = []
         for root, dirs, files in os.walk(_input_dir):
             for file in files:
-                if file.endswith(".dll") and not any([partial in file.lower() for partial in _filter]):
+                if file.endswith(".dll") and not any([partial in file.lower() for partial in _filter if _filter is not None]):
                     dll_files.append(os.path.join(root, file))
 
         return dll_files
