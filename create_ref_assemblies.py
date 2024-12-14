@@ -28,7 +28,7 @@ class DLLFilter:
     """
     Class to filter .dll files from provided directory
     """
-    not_in = ["unityengine", "system.", "hbao", "mono.", "mscorlib", "visualscripting", "netstandard.dll"]
+    default_filter = ["unityengine", "system.", "hbao", "mono.", "mscorlib", "visualscripting", "netstandard.dll"]
 
     @staticmethod
     def filter_dll_files(_input_dir: str, _filter: list[str] = None) -> list[str]:
@@ -41,7 +41,7 @@ class DLLFilter:
         dll_files = []
         for root, dirs, files in os.walk(_input_dir):
             for file in files:
-                if file.endswith(".dll") and not any([partial in file.lower() for partial in _filter or DLLFilter.not_in]):
+                if file.endswith(".dll") and not any([partial in file.lower() for partial in _filter]):
                     dll_files.append(os.path.join(root, file))
 
         return dll_files
@@ -51,7 +51,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create C# reference assemblies from provided .dll files.')
     parser.add_argument('--inp', metavar='input', type=str, nargs='?', help='Input directory for .dll files.')
     parser.add_argument('--out', metavar='output', type=str, nargs='?', help='Output directory for reference assemblies.')
-    parser.add_argument('--fil', metavar='filter', type=str, nargs='?', help=f"File with newline separated filter strings of .dll files to exclude. Uses partial matching. Default filter: {DLLFilter.not_in}")
+    parser.add_argument('--fil', metavar='filter', type=str, nargs='?', help=f"File with newline separated filter strings of .dll files to exclude. Uses partial matching.")
+    parser.add_argument('--default_filter', action='store_true', help='Use default filter for .dll files.')
     args = parser.parse_args()
 
     # Check if input directory is provided
@@ -74,9 +75,16 @@ if __name__ == '__main__':
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    # Check if filter file is provided
     alt_filter = None
+
+    # Check if default filter is enabled
+    if args.default_filter:
+        alt_filter = DLLFilter.default_filter
+
+    # Check if filter file is provided
     if args.fil is not None:
+        if not args.default_filter and alt_filter is not None:
+            raise ValueError("Cannot provide filter file and use default filter at the same time.")
         if not os.path.exists(args.fil):
             raise FileNotFoundError("Filter file does not exist.")
         with open(args.fil, "r") as f:
